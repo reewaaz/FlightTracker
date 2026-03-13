@@ -3,443 +3,870 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AeroTrack - Global & Nepal Flight Tracker</title>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Everlasting Escapes | Nepal to the World</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Leaflet Maps CSS & JS -->
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS (Interactive Map) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow: hidden; }
-        
-        /* Custom Scrollbar for flight list */
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Map Container */
-        #map-container { height: 100vh; width: 100%; z-index: 0; }
-
-        /* Plane Icon Rotation Transition */
-        .plane-icon { transition: transform 1s linear; }
-
-        /* Bottom Sheet Animation */
-        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* Pulse Animation for Live Status */
-        .pulse-ring {
-            position: absolute;
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-            background-color: rgba(34, 197, 94, 0.5);
+        :root {
+            --primary: #fbbf24;
+            --primary-hover: #f59e0b;
+            --bg-dark: #090e17;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
-        @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* 3D Background */
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; opacity: 0.5;
+            background: radial-gradient(circle at center, #1e293b 0%, #090e17 100%);
+        }
+        
+        /* Glassmorphism */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px -10px rgba(251, 191, 36, 0.2);
+        }
+
+        /* Map Styles */
+        #map { height: 65vh; border-radius: 1rem; z-index: 10; background: #1e293b; }
+        .leaflet-popup-content-wrapper { background: rgba(15,23,42,0.9); backdrop-filter: blur(10px); color: white; border: 1px solid var(--primary); }
+        .leaflet-popup-tip { background: var(--primary); }
+        .custom-marker { background: var(--primary); width: 16px; height: 16px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+
+        /* Tabs & Animations */
+        .tab-content { display: none; opacity: 0; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Typography Gradients */
+        .text-gradient {
+            background: linear-gradient(to right, #fde68a, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* Mobile Bottom Nav */
+        .mobile-nav-item.active { color: var(--primary); }
+        .mobile-nav-item.active i { transform: translateY(-3px) scale(1.1); text-shadow: 0 0 10px rgba(251,191,36,0.5); }
+        .pb-safe { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+        
+        /* Loading Skeleton */
+        .img-loading { background-color: #1e293b; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="antialiased pb-safe lg:pb-0">
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+    <!-- Interactive 3D Background -->
+    <div id="canvas-container"></div>
 
-        // --- MOCK DATA GENERATOR (Simulating an API) ---
-        const AIRLINES = [
-            { code: 'RA', name: 'Nepal Airlines', color: '#E11D23', type: 'Intl/Dom' },
-            { code: 'U4', name: 'Buddha Air', color: '#1A3C87', type: 'Dom' },
-            { code: 'YT', name: 'Yeti Airlines', color: '#F7941D', type: 'Dom' },
-            { code: 'QR', name: 'Qatar Airways', color: '#5C0632', type: 'Intl' },
-            { code: 'FZ', name: 'FlyDubai', color: '#FBAE17', type: 'Intl' },
-            { code: 'TK', name: 'Turkish Airlines', color: '#C8102E', type: 'Intl' }
-        ];
-
-        const AIRPORTS = [
-            { code: 'KTM', name: 'Tribhuvan Intl', lat: 27.6966, lng: 85.3591, city: 'Kathmandu' },
-            { code: 'PKR', name: 'Pokhara Intl', lat: 28.1837, lng: 84.0328, city: 'Pokhara' },
-            { code: 'BWA', name: 'Gautam Buddha', lat: 27.5064, lng: 83.4214, city: 'Bhairahawa' },
-            { code: 'LUA', name: 'Tenzing-Hillary', lat: 27.6878, lng: 86.7314, city: 'Lukla' },
-            { code: 'DXB', name: 'Dubai Intl', lat: 25.2532, lng: 55.3657, city: 'Dubai' },
-            { code: 'DOH', name: 'Hamad Intl', lat: 25.2731, lng: 51.6081, city: 'Doha' },
-            { code: 'DEL', name: 'Indira Gandhi', lat: 28.5562, lng: 77.1000, city: 'New Delhi' }
-        ];
-
-        // Generate random flights
-        const generateFlights = () => {
-            const flights = [];
-            for (let i = 0; i < 15; i++) {
-                const airline = AIRLINES[Math.floor(Math.random() * AIRLINES.length)];
-                const dep = AIRPORTS[Math.floor(Math.random() * AIRPORTS.length)];
-                let arr = AIRPORTS[Math.floor(Math.random() * AIRPORTS.length)];
-                while(arr.code === dep.code) arr = AIRPORTS[Math.floor(Math.random() * AIRPORTS.length)];
-
-                // Calculate progress (0 to 1)
-                const progress = Math.random();
-                const lat = dep.lat + (arr.lat - dep.lat) * progress;
-                const lng = dep.lng + (arr.lng - dep.lng) * progress;
-                const bearing = Math.atan2(arr.lng - dep.lng, arr.lat - dep.lat) * 180 / Math.PI;
-
-                flights.push({
-                    id: `FL-${1000 + i}`,
-                    callsign: `${airline.code}${Math.floor(Math.random() * 900) + 100}`,
-                    airline: airline,
-                    dep: dep,
-                    arr: arr,
-                    lat: lat,
-                    lng: lng,
-                    alt: 25000 + Math.floor(Math.random() * 10000),
-                    spd: 400 + Math.floor(Math.random() * 100),
-                    heading: bearing,
-                    status: progress > 0.9 ? 'Landed' : (progress < 0.1 ? 'Scheduled' : 'Flying'),
-                    progress: progress
-                });
-            }
-            return flights;
-        };
-
-        // --- COMPONENTS ---
-
-        const FlightCard = ({ flight, onClick, compact = false }) => (
-            <div 
-                onClick={() => onClick(flight)}
-                className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 active:scale-95 transition-transform cursor-pointer ${compact ? 'mx-2 w-64 flex-shrink-0' : ''}`}
-            >
-                <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-blue-900">{flight.callsign}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                            {flight.airline.name}
-                        </span>
-                    </div>
-                    <div className={`text-xs font-bold px-2 py-1 rounded ${
-                        flight.status === 'Flying' ? 'bg-green-100 text-green-700' : 
-                        flight.status === 'Landed' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                        {flight.status === 'Flying' ? 'LIVE' : flight.status}
-                    </div>
+    <!-- Desktop Top Navigation -->
+    <nav class="hidden lg:block fixed w-full z-50 glass border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+                    <i class="fa-solid fa-plane-up text-yellow-400 text-2xl"></i>
+                    <span class="font-serif font-bold text-2xl tracking-wide text-white">Everlasting<span class="text-yellow-400">Escapes</span></span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                    <div className="text-center w-1/3">
-                        <div className="text-2xl font-bold text-gray-800">{flight.dep.code}</div>
-                        <div className="text-xs text-gray-500 truncate">{flight.dep.city}</div>
-                    </div>
-                    <div className="flex-1 flex flex-col items-center px-2">
-                        <i className="fa-solid fa-plane text-gray-300 text-lg transform rotate-90"></i>
-                        <div className="w-full h-0.5 bg-gray-200 mt-1 relative">
-                            <div className="absolute h-0.5 bg-blue-500 transition-all duration-1000" style={{width: `${flight.progress * 100}%`}}></div>
-                        </div>
-                    </div>
-                    <div className="text-center w-1/3">
-                        <div className="text-2xl font-bold text-gray-800">{flight.arr.code}</div>
-                        <div className="text-xs text-gray-500 truncate">{flight.arr.city}</div>
-                    </div>
+                <div class="flex space-x-8">
+                    <button onclick="switchTab('home')" class="nav-link active font-medium text-gray-300 hover:text-yellow-400 transition">Home</button>
+                    <button onclick="switchTab('destinations')" class="nav-link font-medium text-gray-300 hover:text-yellow-400 transition">100 Destinations</button>
+                    <button onclick="switchTab('visa')" class="nav-link font-medium text-gray-300 hover:text-yellow-400 transition">Nepal Visa Hub</button>
                 </div>
             </div>
-        );
+        </div>
+    </nav>
 
-        const BottomSheet = ({ flight, onClose }) => {
-            if (!flight) return null;
+    <!-- Mobile Bottom Navigation (App-like) -->
+    <nav class="lg:hidden fixed bottom-0 w-full z-50 glass border-t border-gray-800 pb-[env(safe-area-inset-bottom)]">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="switchTab('home')" class="mobile-nav-item active flex flex-col items-center gap-1 text-gray-400 transition w-1/3">
+                <i class="fa-solid fa-house text-xl transition-transform duration-300"></i>
+                <span class="text-[10px] font-medium">Home</span>
+            </button>
+            <button onclick="switchTab('destinations')" class="mobile-nav-item flex flex-col items-center gap-1 text-gray-400 transition w-1/3">
+                <i class="fa-solid fa-earth-americas text-xl transition-transform duration-300"></i>
+                <span class="text-[10px] font-medium">Explore</span>
+            </button>
+            <button onclick="switchTab('visa')" class="mobile-nav-item flex flex-col items-center gap-1 text-gray-400 transition w-1/3">
+                <i class="fa-solid fa-passport text-xl transition-transform duration-300"></i>
+                <span class="text-[10px] font-medium">Visa Hub</span>
+            </button>
+        </div>
+    </nav>
 
-            return (
-                <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
-                    <div className="absolute inset-0 bg-black/20 pointer-events-auto" onClick={onClose}></div>
-                    <div className="bg-white w-full max-w-md rounded-t-3xl shadow-2xl p-6 pointer-events-auto slide-up pb-10">
-                        
-                        {/* Handle bar */}
-                        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
+    <!-- MAIN CONTENT -->
+    <main class="pt-10 lg:pt-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
 
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900">{flight.callsign}</h2>
-                                <p className="text-gray-500">{flight.airline.name}</p>
-                            </div>
-                            <img 
-                                src={`https://ui-avatars.com/api/?name=${flight.airline.name}&background=random&color=fff&size=48`} 
-                                className="w-12 h-12 rounded-full border-2 border-white shadow-md"
-                                alt="Logo"
-                            />
-                        </div>
-
-                        <div className="flex justify-between items-center bg-gray-50 rounded-2xl p-4 mb-6">
-                            <div className="text-center">
-                                <div className="text-3xl font-black text-gray-800">{flight.dep.code}</div>
-                                <div className="text-sm text-gray-500">{flight.dep.city}</div>
-                                <div className="text-xs font-mono text-gray-400 mt-1">10:45 AM</div>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <span className="text-xs text-blue-600 font-bold mb-1">
-                                    {Math.round((1-flight.progress)*100)} min left
-                                </span>
-                                <i className="fa-solid fa-plane text-blue-500 text-xl transform rotate-90"></i>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-black text-gray-800">{flight.arr.code}</div>
-                                <div className="text-sm text-gray-500">{flight.arr.city}</div>
-                                <div className="text-xs font-mono text-gray-400 mt-1">11:55 AM</div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 mb-6">
-                            <div className="bg-gray-50 p-3 rounded-xl text-center">
-                                <div className="text-gray-400 text-xs uppercase font-bold mb-1">Altitude</div>
-                                <div className="font-bold text-gray-800">{flight.alt} ft</div>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded-xl text-center">
-                                <div className="text-gray-400 text-xs uppercase font-bold mb-1">Speed</div>
-                                <div className="font-bold text-gray-800">{flight.spd} kts</div>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded-xl text-center">
-                                <div className="text-gray-400 text-xs uppercase font-bold mb-1">Aircraft</div>
-                                <div className="font-bold text-gray-800">A320</div>
-                            </div>
-                        </div>
-
-                        <button onClick={onClose} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition active:scale-95">
-                            Track on Map
-                        </button>
-                    </div>
+        <!-- ================= HOME ================= -->
+        <section id="home" class="tab-content active text-center mt-4 lg:mt-10">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-xs font-semibold mb-6 shadow-lg backdrop-blur-sm">
+                <i class="fa-solid fa-check-circle"></i> Exclusively Curated for Nepal Passports
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold font-serif mb-6 leading-tight">
+                Craft Your <span class="text-gradient">Timeless</span> <br/>Honeymoon
+            </h1>
+            <p class="text-base md:text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Explore the world's 100 most romantic locations. View them on an interactive map, discover bespoke itineraries, and instantly access verified visa application procedures from Kathmandu.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4 mb-16">
+                <button onclick="switchTab('destinations')" class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-gray-900 font-bold py-4 px-8 rounded-full shadow-[0_0_15px_rgba(251,191,36,0.3)] transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-map-location-dot mr-2"></i> Explore the World
+                </button>
+            </div>
+            
+            <div class="text-left mt-10">
+                <h3 class="text-2xl font-serif text-white mb-6 flex items-center gap-3">
+                    Top Trending <span class="h-px bg-gray-700 flex-grow ml-4"></span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="home-featured-grid">
+                    <!-- Injected by JS -->
                 </div>
-            );
+            </div>
+        </section>
+
+        <!-- ================= EXPLORE (DESTINATIONS MAP & LIST) ================= -->
+        <section id="destinations" class="tab-content mt-4">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-3xl md:text-5xl font-serif font-bold"><span class="text-gradient">100 Destinations</span></h2>
+                
+                <!-- View Toggle -->
+                <div class="glass flex rounded-full p-1 border border-gray-700 w-full md:w-auto">
+                    <button id="btn-list-view" onclick="toggleView('list')" class="flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-medium transition bg-yellow-500 text-gray-900 shadow-md">
+                        <i class="fa-solid fa-list mr-2"></i> List
+                    </button>
+                    <button id="btn-map-view" onclick="toggleView('map')" class="flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-medium transition text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-earth-americas mr-2"></i> Map
+                    </button>
+                </div>
+            </div>
+
+            <!-- List View Container -->
+            <div id="view-list" class="block">
+                <!-- Search & Filters -->
+                <div class="flex flex-col md:flex-row gap-4 mb-8">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-500"></i>
+                        <input type="text" id="searchInput" onkeyup="filterList()" placeholder="Search city or country..." class="w-full glass bg-gray-900/50 text-white rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-yellow-500 outline-none transition">
+                    </div>
+                    <select id="continentFilter" onchange="filterList()" class="glass bg-gray-900/50 text-white rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-yellow-500 cursor-pointer appearance-none">
+                        <option value="All">All Continents</option>
+                        <option value="Asia">Asia</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Americas">Americas</option>
+                        <option value="Africa">Africa</option>
+                        <option value="Oceania">Oceania</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Continent Sections -->
+                <div id="list-container" class="space-y-10">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- Map View Container -->
+            <div id="view-map" class="hidden relative rounded-2xl overflow-hidden shadow-2xl border border-gray-700 p-1 bg-gray-800">
+                <div id="map"></div>
+                <div class="absolute bottom-4 left-4 z-[400] glass px-3 py-2 rounded-lg text-xs pointer-events-none">
+                    <i class="fa-solid fa-circle-info text-yellow-400 mr-1"></i> Tap any dot to view itinerary
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= DESTINATION DETAIL (INFOGRAPHIC) ================= -->
+        <section id="destination-detail" class="tab-content mt-4">
+            <button onclick="switchTab('destinations')" class="text-gray-400 hover:text-yellow-400 mb-6 flex items-center gap-2 group transition text-sm font-medium bg-gray-800/50 px-4 py-2 rounded-full border border-gray-700 w-max">
+                <i class="fa-solid fa-arrow-left transform group-hover:-translate-x-1 transition"></i> Back to Destinations
+            </button>
+            
+            <div id="detail-dynamic-content" class="space-y-6">
+                <!-- Content injected via JS -->
+            </div>
+        </section>
+
+        <!-- ================= VISA HUB ================= -->
+        <section id="visa" class="tab-content mt-4">
+            <div class="text-center mb-10">
+                <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/50 text-xs font-bold uppercase tracking-wide mb-3"><i class="fa-solid fa-id-card mr-2"></i>Nepal Passport</span>
+                <h2 class="text-4xl md:text-5xl font-serif font-bold mb-4">Global <span class="text-gradient">Visa Hub</span></h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Verified procedures, application centers in Kathmandu, and official links for Nepalese citizens applying for tourist/honeymoon visas in 2026.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Schengen -->
+                <div class="glass-card p-6 rounded-2xl border-t-4 border-blue-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="https://flagcdn.com/w40/eu.png" alt="Schengen Area" class="w-8 rounded-sm object-cover border border-gray-600 shadow-sm">
+                        <h3 class="text-2xl font-serif text-white">Schengen Area (Europe)</h3>
+                    </div>
+                    <p class="text-sm text-gray-300 mb-4 border-b border-gray-700 pb-4">Covers France, Greece, Italy, Switzerland, Spain, etc.</p>
+                    <ul class="space-y-2 text-sm text-gray-400 mb-6">
+                        <li><i class="fa-solid fa-location-dot text-yellow-500 mr-2 w-4"></i> <strong>Center:</strong> VFS Global, Chhaya Center, Thamel.</li>
+                        <li><i class="fa-solid fa-file-invoice text-yellow-500 mr-2 w-4"></i> <strong>Docs:</strong> NOC from employer, 6-month bank statement (strong balance), €30K Travel Insurance, Flight/Hotel bookings.</li>
+                        <li><i class="fa-regular fa-clock text-yellow-500 mr-2 w-4"></i> <strong>Time:</strong> Apply at least 45 days prior.</li>
+                    </ul>
+                    <a href="https://visa.vfsglobal.com/npl/en/" target="_blank" class="block text-center bg-gray-800 hover:bg-gray-700 text-blue-400 py-2 rounded-lg transition text-sm font-semibold border border-blue-900">Visit VFS Global <i class="fa-solid fa-external-link-alt ml-1"></i></a>
+                </div>
+
+                <!-- Japan -->
+                <div class="glass-card p-6 rounded-2xl border-t-4 border-red-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="https://flagcdn.com/w40/jp.png" alt="Japan" class="w-8 rounded-sm object-cover border border-gray-600 shadow-sm">
+                        <h3 class="text-2xl font-serif text-white">Japan</h3>
+                    </div>
+                    <p class="text-sm text-gray-300 mb-4 border-b border-gray-700 pb-4">Requires a Temporary Visitor Visa for Tourism.</p>
+                    <ul class="space-y-2 text-sm text-gray-400 mb-6">
+                        <li><i class="fa-solid fa-location-dot text-yellow-500 mr-2 w-4"></i> <strong>Center:</strong> VFS Global Kathmandu or Embassy in Panipokhari.</li>
+                        <li><i class="fa-solid fa-file-invoice text-yellow-500 mr-2 w-4"></i> <strong>Docs:</strong> Detailed daily itinerary (Form provided by embassy), Bank statement, NOC.</li>
+                        <li><i class="fa-regular fa-clock text-yellow-500 mr-2 w-4"></i> <strong>Time:</strong> 5-10 working days.</li>
+                    </ul>
+                    <a href="https://www.np.emb-japan.go.jp/" target="_blank" class="block text-center bg-gray-800 hover:bg-gray-700 text-red-400 py-2 rounded-lg transition text-sm font-semibold border border-red-900">Embassy of Japan <i class="fa-solid fa-external-link-alt ml-1"></i></a>
+                </div>
+
+                <!-- Bali / Indonesia -->
+                <div class="glass-card p-6 rounded-2xl border-t-4 border-green-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="https://flagcdn.com/w40/id.png" alt="Indonesia" class="w-8 rounded-sm object-cover border border-gray-600 shadow-sm">
+                        <h3 class="text-2xl font-serif text-white">Bali (Indonesia)</h3>
+                    </div>
+                    <p class="text-sm text-gray-300 mb-4 border-b border-gray-700 pb-4">E-Visa (B211A) recommended over unpredictable VOA.</p>
+                    <ul class="space-y-2 text-sm text-gray-400 mb-6">
+                        <li><i class="fa-solid fa-laptop text-yellow-500 mr-2 w-4"></i> <strong>Process:</strong> Apply online via official portal or local travel agent in KTM.</li>
+                        <li><i class="fa-solid fa-file-invoice text-yellow-500 mr-2 w-4"></i> <strong>Docs:</strong> Passport copy, Digital Photo, Return flight.</li>
+                    </ul>
+                    <a href="https://molina.imigrasi.go.id/" target="_blank" class="block text-center bg-gray-800 hover:bg-gray-700 text-green-400 py-2 rounded-lg transition text-sm font-semibold border border-green-900">Official E-Visa Portal <i class="fa-solid fa-external-link-alt ml-1"></i></a>
+                </div>
+
+                <!-- Maldives -->
+                <div class="glass-card p-6 rounded-2xl border-t-4 border-teal-500">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="https://flagcdn.com/w40/mv.png" alt="Maldives" class="w-8 rounded-sm object-cover border border-gray-600 shadow-sm">
+                        <h3 class="text-2xl font-serif text-white">The Maldives</h3>
+                    </div>
+                    <p class="text-sm text-gray-300 mb-4 border-b border-gray-700 pb-4">Visa on Arrival (FREE) for Nepali Passports.</p>
+                    <ul class="space-y-2 text-sm text-gray-400 mb-6">
+                        <li><i class="fa-solid fa-passport text-yellow-500 mr-2 w-4"></i> <strong>Process:</strong> Granted upon landing at Malé airport.</li>
+                        <li><i class="fa-solid fa-circle-exclamation text-yellow-500 mr-2 w-4"></i> <strong>Mandatory:</strong> Fill the IMUGA digital declaration 96 hours before departure.</li>
+                        <li><i class="fa-solid fa-bed text-yellow-500 mr-2 w-4"></i> <strong>Docs:</strong> Confirmed prepaid hotel booking.</li>
+                    </ul>
+                    <a href="https://imuga.immigration.gov.mv/" target="_blank" class="block text-center bg-gray-800 hover:bg-gray-700 text-teal-400 py-2 rounded-lg transition text-sm font-semibold border border-teal-900">IMUGA Declaration <i class="fa-solid fa-external-link-alt ml-1"></i></a>
+                </div>
+                
+                <!-- China -->
+                <div class="glass-card p-6 rounded-2xl border-t-4 border-yellow-500 md:col-span-2 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <img src="https://flagcdn.com/w40/cn.png" alt="China" class="w-8 rounded-sm object-cover shadow-sm">
+                            <h3 class="text-2xl font-serif text-white">China (Lijiang, Beijing)</h3>
+                        </div>
+                        <p class="text-sm text-gray-300">Requires "L" Tourist Visa. Must apply at the Chinese Visa Application Service Center (CVASC) located at Rising Mall, Kamaladi, Kathmandu. Requires physical submission of passport, photos, and flight/hotel bookings.</p>
+                    </div>
+                    <a href="https://www.visaforchina.cn/KTM2_EN/" target="_blank" class="shrink-0 bg-yellow-500 hover:bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold transition shadow-md">Visit CVASC &rarr;</a>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center text-xs text-gray-500 bg-gray-900 p-4 rounded-xl border border-gray-800">
+                <i class="fa-solid fa-circle-info mr-1"></i> Visa policies change frequently based on bilateral relations. Data curated for travel in 2026. Always verify with your airline or official consulate prior to booking non-refundable flights.
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ==========================================
+        // 1. DATA CONFIGURATION (100 DESTINATIONS)
+        // ==========================================
+        // Format: "City|Country|Continent|Lat|Lng|Currency|Language|FlightHrsFromKTM"
+        const rawData =[
+            // ASIA
+            "Lijiang|China|Asia|26.8590|100.2230|CNY|Mandarin|8h (1 stop)",
+            "Kyoto|Japan|Asia|35.0116|135.7681|JPY|Japanese|10h (1 stop)",
+            "Maldives|Maldives|Asia|3.2028|73.2207|MVR|Dhivehi|6h (1 stop)",
+            "Bali|Indonesia|Asia|-8.3405|115.0920|IDR|Indonesian|8h (1 stop)",
+            "Phuket|Thailand|Asia|7.8804|98.3923|THB|Thai|6h (1 stop)",
+            "Koh Samui|Thailand|Asia|9.5120|100.0136|THB|Thai|7h (1 stop)",
+            "Hoi An|Vietnam|Asia|15.8801|108.3380|VND|Vietnamese|8h (1 stop)",
+            "Luang Prabang|Laos|Asia|19.8833|102.1333|LAK|Lao|9h (1 stop)",
+            "Siem Reap|Cambodia|Asia|13.3615|103.8599|KHR|Khmer|8h (1 stop)",
+            "Dubai|UAE|Asia|25.2048|55.2708|AED|Arabic|5h (Direct)",
+            "Muscat|Oman|Asia|23.5859|58.4059|OMR|Arabic|4.5h (Direct)",
+            "Petra|Jordan|Asia|30.3285|35.4444|JOD|Arabic|10h (1 stop)",
+            "Tokyo|Japan|Asia|35.6762|139.6503|JPY|Japanese|9h (1 stop)",
+            "Seoul|South Korea|Asia|37.5665|126.9780|KRW|Korean|8h (1 stop)",
+            "Jeju Island|South Korea|Asia|33.4996|126.5312|KRW|Korean|10h (1 stop)",
+            "Palawan|Philippines|Asia|9.8349|118.7384|PHP|Filipino|11h (2 stops)",
+            "Boracay|Philippines|Asia|11.9674|121.9248|PHP|Filipino|12h (2 stops)",
+            "Goa|India|Asia|15.2993|74.1240|INR|Hindi/Konkani|4h (1 stop)",
+            "Udaipur|India|Asia|24.5854|73.7125|INR|Hindi|3h (1 stop)",
+            "Langkawi|Malaysia|Asia|6.3500|99.8000|MYR|Malay|6h (1 stop)",
+            "Taipei|Taiwan|Asia|25.0330|121.5654|TWD|Mandarin|9h (1 stop)",
+            "Pokhara|Nepal|Asia|28.2096|83.9856|NPR|Nepali|0.5h (Direct)", 
+
+            // EUROPE
+            "Paris|France|Europe|48.8566|2.3522|EUR|French|12h (1 stop)",
+            "Santorini|Greece|Europe|36.3932|25.4615|EUR|Greek|14h (1 stop)",
+            "Venice|Italy|Europe|45.4408|12.3155|EUR|Italian|13h (1 stop)",
+            "Amalfi Coast|Italy|Europe|40.6340|14.6027|EUR|Italian|13h (1 stop)",
+            "Zermatt|Switzerland|Europe|46.0207|7.7491|CHF|German/French|14h (1 stop)",
+            "Lucerne|Switzerland|Europe|47.0502|8.3093|CHF|German|14h (1 stop)",
+            "Cappadocia|Turkey|Europe|38.6431|34.8303|TRY|Turkish|11h (1 stop)",
+            "Prague|Czech Republic|Europe|50.0755|14.4378|CZK|Czech|13h (1 stop)",
+            "Vienna|Austria|Europe|48.2082|16.3738|EUR|German|12h (1 stop)",
+            "Budapest|Hungary|Europe|47.4979|19.0402|HUF|Hungarian|13h (1 stop)",
+            "Dubrovnik|Croatia|Europe|42.6507|18.0944|EUR|Croatian|14h (1 stop)",
+            "Tuscany|Italy|Europe|43.7711|11.2486|EUR|Italian|13h (1 stop)",
+            "Rome|Italy|Europe|41.9028|12.4964|EUR|Italian|12h (1 stop)",
+            "Florence|Italy|Europe|43.7696|11.2558|EUR|Italian|13h (1 stop)",
+            "Cinque Terre|Italy|Europe|44.1461|9.7071|EUR|Italian|14h (2 stops)",
+            "Lake Como|Italy|Europe|45.9861|9.2619|EUR|Italian|13h (1 stop)",
+            "Hallstatt|Austria|Europe|47.5622|13.6493|EUR|German|14h (1 stop)",
+            "Mykonos|Greece|Europe|37.4467|25.3289|EUR|Greek|14h (1 stop)",
+            "Crete|Greece|Europe|35.2401|24.8093|EUR|Greek|14h (1 stop)",
+            "Athens|Greece|Europe|37.9838|23.7275|EUR|Greek|12h (1 stop)",
+            "Reykjavik|Iceland|Europe|64.1466|-21.9426|ISK|Icelandic|16h (2 stops)",
+            "Tromso|Norway|Europe|69.6492|18.9553|NOK|Norwegian|16h (2 stops)",
+            "Stockholm|Sweden|Europe|59.3293|18.0686|SEK|Swedish|14h (1 stop)",
+            "Copenhagen|Denmark|Europe|55.6761|12.5683|DKK|Danish|14h (1 stop)",
+            "Amsterdam|Netherlands|Europe|52.3676|4.9041|EUR|Dutch|13h (1 stop)",
+            "Bruges|Belgium|Europe|51.2093|3.2247|EUR|Dutch|14h (1 stop)",
+            "London|UK|Europe|51.5074|-0.1278|GBP|English|13h (1 stop)",
+            "Edinburgh|UK|Europe|55.9533|-3.1883|GBP|English|14h (1 stop)",
+            "Isle of Skye|UK|Europe|57.5359|-6.2263|GBP|English|16h (2 stops)",
+            "Dublin|Ireland|Europe|53.3498|-6.2603|EUR|English/Irish|14h (1 stop)",
+            "Cliffs of Moher|Ireland|Europe|52.9720|-9.4265|EUR|English/Irish|15h (2 stops)",
+            "Barcelona|Spain|Europe|41.3851|2.1734|EUR|Spanish/Catalan|14h (1 stop)",
+            "Madrid|Spain|Europe|40.4168|-3.7038|EUR|Spanish|14h (1 stop)",
+            "Seville|Spain|Europe|37.3891|-5.9845|EUR|Spanish|15h (1 stop)",
+            "Granada|Spain|Europe|37.1773|-3.5986|EUR|Spanish|15h (2 stops)",
+            "Lisbon|Portugal|Europe|38.7223|-9.1393|EUR|Portuguese|15h (1 stop)",
+            "Porto|Portugal|Europe|41.1579|-8.6291|EUR|Portuguese|15h (1 stop)",
+            "Algarve|Portugal|Europe|37.0194|-7.9304|EUR|Portuguese|16h (1 stop)",
+            "Madeira|Portugal|Europe|32.7607|-16.9595|EUR|Portuguese|18h (2 stops)",
+            "Azores|Portugal|Europe|37.7412|-25.6756|EUR|Portuguese|19h (2 stops)",
+
+            // AMERICAS
+            "Maui|USA|Americas|20.7984|-156.3319|USD|English|22h (2 stops)",
+            "Banff|Canada|Americas|51.1784|-115.5708|CAD|English|20h (2 stops)",
+            "Vancouver|Canada|Americas|49.2827|-123.1207|CAD|English|18h (2 stops)",
+            "Quebec City|Canada|Americas|46.8139|-71.2080|CAD|French|20h (2 stops)",
+            "New York City|USA|Americas|40.7128|-74.0060|USD|English|18h (1 stop)",
+            "Charleston|USA|Americas|32.7765|-79.9311|USD|English|21h (2 stops)",
+            "Savannah|USA|Americas|32.0809|-81.0912|USD|English|21h (2 stops)",
+            "Sedona|USA|Americas|34.8697|-111.7610|USD|English|22h (2 stops)",
+            "Napa Valley|USA|Americas|38.5025|-122.2654|USD|English|20h (2 stops)",
+            "Aspen|USA|Americas|39.1911|-106.8175|USD|English|22h (2 stops)",
+            "Key West|USA|Americas|24.5551|-81.7800|USD|English|23h (2 stops)",
+            "Cancun|Mexico|Americas|21.1619|-86.8515|MXN|Spanish|24h (2 stops)",
+            "Tulum|Mexico|Americas|20.2114|-87.4654|MXN|Spanish|24h (2 stops)",
+            "Los Cabos|Mexico|Americas|22.8905|-109.9167|MXN|Spanish|24h (2 stops)",
+            "Oaxaca|Mexico|Americas|17.0594|-96.7216|MXN|Spanish|25h (2 stops)",
+            "San Jose|Costa Rica|Americas|9.9281|-84.0907|CRC|Spanish|26h (2 stops)",
+            "Ambergris Caye|Belize|Americas|18.0191|-87.9351|BZD|English|26h (2 stops)",
+            "Panama City|Panama|Americas|8.9824|-79.5199|PAB/USD|Spanish|25h (2 stops)",
+            "Cartagena|Colombia|Americas|10.3910|-75.4794|COP|Spanish|26h (2 stops)",
+            "Medellin|Colombia|Americas|6.2442|-75.5812|COP|Spanish|26h (2 stops)",
+            "Cusco|Peru|Americas|-13.5320|-71.9675|PEN|Spanish|28h (3 stops)",
+            "Machu Picchu|Peru|Americas|-13.1631|-72.5450|PEN|Spanish|29h (3 stops)",
+            "Buenos Aires|Argentina|Americas|-34.6037|-58.3816|ARS|Spanish|28h (2 stops)",
+            "Patagonia|Argentina|Americas|-41.8102|-68.9063|ARS|Spanish|30h (3 stops)",
+            "Mendoza|Argentina|Americas|-32.8908|-68.8272|ARS|Spanish|29h (3 stops)",
+            "Rio de Janeiro|Brazil|Americas|-22.9068|-43.1729|BRL|Portuguese|26h (2 stops)",
+            "Santiago|Chile|Americas|-33.4489|-70.6693|CLP|Spanish|28h (2 stops)",
+            "Atacama|Chile|Americas|-23.8634|-69.1328|CLP|Spanish|30h (3 stops)",
+
+            // AFRICA
+            "Cape Town|South Africa|Africa|-33.9249|18.4241|ZAR|English/Afrikaans|15h (1 stop)",
+            "Serengeti|Tanzania|Africa|-2.3333|34.8333|TZS|Swahili|12h (1 stop)",
+            "Zanzibar|Tanzania|Africa|-6.1659|39.2026|TZS|Swahili|12h (1 stop)",
+            "Marrakech|Morocco|Africa|31.6295|-7.9811|MAD|Arabic/French|16h (2 stops)",
+            "Cairo|Egypt|Africa|30.0444|31.2357|EGP|Arabic|8h (1 stop)",
+            "Seychelles|Seychelles|Africa|-4.6796|55.4920|SCR|English/French|10h (1 stop)",
+            "Mauritius|Mauritius|Africa|-20.3484|57.5522|MUR|English/French|11h (1 stop)",
+            "Victoria Falls|Zimbabwe|Africa|-17.9244|25.8559|USD|English|16h (2 stops)",
+            "Masai Mara|Kenya|Africa|-1.6033|35.1439|KES|Swahili/English|11h (1 stop)",
+
+            // OCEANIA
+            "Sydney|Australia|Oceania|-33.8688|151.2093|AUD|English|14h (1 stop)",
+            "Melbourne|Australia|Oceania|-37.8136|144.9631|AUD|English|14h (1 stop)",
+            "Whitsundays|Australia|Oceania|-20.3160|148.9890|AUD|English|16h (2 stops)",
+            "Great Barrier Reef|Australia|Oceania|-18.2871|147.6992|AUD|English|16h (2 stops)",
+            "Queenstown|New Zealand|Oceania|-45.0312|168.6626|NZD|English|18h (2 stops)",
+            "Auckland|New Zealand|Oceania|-36.8485|174.7633|NZD|English|16h (1 stop)",
+            "Rotorua|New Zealand|Oceania|-38.1368|176.2497|NZD|English|17h (2 stops)",
+            "Fiordland|New Zealand|Oceania|-45.4121|167.7345|NZD|English|18h (2 stops)",
+            "Tahiti|French Polynesia|Oceania|-17.6797|-149.4068|XPF|French|24h (2 stops)",
+            "Bora Bora|French Polynesia|Oceania|-16.5159|-151.7364|XPF|French|25h (3 stops)",
+            "Fiji|Fiji|Oceania|-17.7134|178.0650|FJD|English|18h (2 stops)",
+            "Rarotonga|Cook Islands|Oceania|-21.2367|-159.7777|NZD|English|22h (2 stops)"
+        ];
+
+        let destinations =[];
+        let mapInstance = null;
+        let mapMarkers =[];
+
+        function parseData() {
+            rawData.forEach((item, index) => {
+                const parts = item.split('|');
+                if(parts.length < 8) return;
+                destinations.push({
+                    id: index,
+                    city: parts[0], country: parts[1], continent: parts[2],
+                    lat: parseFloat(parts[3]), lng: parseFloat(parts[4]),
+                    currency: parts[5], language: parts[6], flight: parts[7]
+                });
+            });
+        }
+
+        // ==========================================
+        // 2. RELIABLE IMAGE CDN MAPPING
+        // ==========================================
+        
+        // Exact matching for popular cities using valid, tested Unsplash Photo IDs
+        const specificImageIDs = {
+            "Lijiang": "1527685609591-44b0aef2400b",
+            "Kyoto": "1493976040374-85c8e12f0c0e",
+            "Maldives": "1514282401047-d79a71a590e8",
+            "Bali": "1537996194471-e657df975ab4",
+            "Paris": "1502602898657-3e90760b372f",
+            "Santorini": "1613395877344-13d4a32ce7f1",
+            "Venice": "1514890547357-a9ee288728e0",
+            "Phuket": "1580977284429-1b5e54d6be53",
+            "Dubai": "1512453979798-5ea266f8880c",
+            "Rome": "1552832233-e18e88e89823",
+            "New York City": "1496442226666-8d4d0e62f6e1",
+            "Cape Town": "1580060839134-75a5edca2e99",
+            "Sydney": "1506973035872-a4ec16b8e8d9",
+            "Machu Picchu": "1526392060635-9d60198d10f8",
+            "Zermatt": "1530122037265-a5f1f91d3b99"
         };
 
-        const App = () => {
-            const [flights, setFlights] = useState([]);
-            const [selectedFlight, setSelectedFlight] = useState(null);
-            const [view, setView] = useState('map'); // 'map' or 'list'
-            const [searchTerm, setSearchTerm] = useState('');
-            const mapRef = useRef(null);
-            const markersRef = useRef({});
+        // Fallback robust Unsplash photo IDs (Nature, Resorts, Oceans, Architecture) guaranteed to work
+        const fallbackImageIDs =[
+            "1499793983690-e29da59ef1c2", // Beach
+            "1476514525535-07fb3b4ae5f1", // Lake/Boat
+            "1507525428034-b723cf961d3e", // Beach setup
+            "1469334031218-e382a71b716b", // Nature couple
+            "1499856871958-5b9627545d1a", // City alt
+            "1510414842594-a61c69b5ae57", // Coastline
+            "1440778303588-435521a205bc", // Beautiful resort
+            "1501785888041-af3ef285b470", // Mountain view
+            "1522814702604-5e58e2ee0b3f", // City evening
+            "1486899430790-61dbf6f6dca6", // Sunset
+            "1436491865332-7a61ce6530c3", // Architecture
+            "1506012787146-f92b2d7d6d96"  // Tropical
+        ];
 
-            // Initialize Data
-            useEffect(() => {
-                const initialFlights = generateFlights();
-                setFlights(initialFlights);
+        function getImageUrl(city) {
+            // Check if we have an exact mapped ID, otherwise use a pseudo-random robust fallback
+            const photoId = specificImageIDs[city] || fallbackImageIDs[city.length % fallbackImageIDs.length];
+            return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=800&q=80`;
+        }
 
-                // Simulate Real-time Movement Loop
-                const interval = setInterval(() => {
-                    setFlights(prevFlights => 
-                        prevFlights.map(f => {
-                            if (f.status !== 'Flying') return f;
-                            
-                            // Move flight slightly towards destination
-                            const step = 0.005; 
-                            const newLat = f.lat + (f.arr.lat - f.dep.lat) * step;
-                            const newLng = f.lng + (f.arr.lng - f.dep.lng) * step;
-                            const newProgress = f.progress + step;
+        // ==========================================
+        // 3. LOGIC & DATA GENERATORS
+        // ==========================================
 
-                            return {
-                                ...f,
-                                lat: newLat,
-                                lng: newLng,
-                                progress: newProgress,
-                                status: newProgress >= 1 ? 'Landed' : 'Flying'
-                            };
-                        })
-                    );
-                }, 1000);
+        function getVisaStatus(country, continent) {
+            const eu =["France", "Greece", "Italy", "Switzerland", "Czech Republic", "Austria", "Hungary", "Croatia", "Netherlands", "Belgium", "Spain", "Portugal", "Iceland", "Norway", "Sweden", "Denmark"];
+            if (eu.includes(country)) return { type: "Schengen Visa Required", color: "blue", icon: "fa-eu", action: "Apply via VFS Global. Needs NOC & Bank Statements." };
+            if (country === "Japan") return { type: "Embassy Visa Required", color: "red", icon: "fa-file-signature", action: "Apply via VFS Global Kathmandu. Strict financial proof needed." };
+            if (country === "China") return { type: "Embassy Visa Required", color: "red", icon: "fa-building-flag", action: "Apply at CVASC Kathmandu (Rising Mall)." };
+            if (country === "Maldives" || country === "Seychelles") return { type: "Free Visa on Arrival", color: "teal", icon: "fa-plane-arrival", action: "Granted on landing. Fill mandatory digital declaration forms prior." };
+            if (country === "Indonesia") return { type: "E-Visa (B211A) Recommended", color: "green", icon: "fa-laptop", action: "VOA is restricted for Nepal. Apply E-Visa via agency online." };
+            if (country === "UAE" || country === "Turkey" || country === "Malaysia") return { type: "E-Visa Required", color: "green", icon: "fa-laptop", action: "Apply online prior to booking flights." };
+            if (country === "USA" || country === "Canada" || country === "UK" || country === "Australia" || country === "New Zealand") return { type: "Strict Embassy Visa", color: "red", icon: "fa-landmark", action: "Requires biometrics and/or interview. Apply 2+ months early." };
+            if (country === "Thailand") return { type: "Standard Tourist Visa", color: "orange", icon: "fa-file", action: "Apply at the Thai Embassy, Maharajgunj, Kathmandu." };
+            
+            return { type: "Pre-arrival Visa Required", color: "orange", icon: "fa-passport", action: "Check specific consulate requirements for Nepal passports." };
+        }
 
-                return () => clearInterval(interval);
-            }, []);
-
-            // Initialize Map
-            useEffect(() => {
-                if (!mapRef.current) {
-                    // Center on Nepal
-                    mapRef.current = L.map('map-container', { zoomControl: false }).setView([28.3949, 84.1240], 7);
+        function generateSpecificItinerary(city, country) {
+            // Exact dates as requested: April 26 - May 1, 2026
+            const dates =["April 26", "April 27", "April 28", "April 29", "April 30", "May 1"];
+            
+            return `
+                <div class="relative border-l-2 border-yellow-500/50 ml-4 space-y-8 pb-4">
                     
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-                        subdomains: 'abcd',
-                        maxZoom: 19
-                    }).addTo(mapRef.current);
-                }
-            }, []);
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[0]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">Arrival in ${city}</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">Depart Kathmandu and touch down in ${country}. Transfer to your romantic honeymoon suite. Spend the evening acclimating and enjoy a quiet, authentic ${country} welcome dinner.</p>
+                    </div>
 
-            // Update Map Markers
-            useEffect(() => {
-                if (!mapRef.current) return;
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[1]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">The Heart of ${city}</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">A full day exploring the most iconic landmarks, historical streets, and cultural hotspots of ${city}. Perfect timing to hire a local photographer for your couple's photoshoot.</p>
+                    </div>
 
-                const map = mapRef.current;
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[2]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">Nature & Relaxation</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">Step away from the city center to embrace the natural beauty of ${country}. Whether it's a coastal drive, mountain view, or scenic park, followed by a pre-booked couple's spa treatment.</p>
+                    </div>
 
-                // Clear old markers that aren't in current flight list (optional optimization)
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[3]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">Leisure & Local Life</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">A slow morning. Stroll through artisan markets in ${city}, pick up souvenirs, and try local street food delicacies. Enjoy a sunset viewpoint or scenic cruise in the evening.</p>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[4]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">The Grand Finale</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">Take a short day trip outside ${city} to a secluded spot. Return for a lavish, multi-course candlelight farewell dinner under the stars, toasting to your new life together.</p>
+                    </div>
+
+                    <div class="relative pl-8">
+                        <div class="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full bg-yellow-500 border-2 border-gray-900 shadow-[0_0_10px_#fbbf24]"></div>
+                        <span class="text-xs font-bold tracking-widest text-gray-500 uppercase">${dates[5]}</span>
+                        <h4 class="text-xl font-serif text-yellow-400 mt-1">Until Next Time</h4>
+                        <p class="text-sm text-gray-300 mt-2 leading-relaxed">Enjoy a final morning coffee. Transfer to the airport for your flight back to Kathmandu, carrying a lifetime of unforgettable honeymoon memories from ${city}.</p>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // 4. UI RENDERING
+        // ==========================================
+
+        function renderHome() {
+            const grid = document.getElementById('home-featured-grid');
+            // Show Kyoto, Lijiang, Maldives
+            const featuredIds = [1, 0, 2]; 
+            featuredIds.forEach(id => {
+                const dest = destinations[id];
+                grid.innerHTML += `
+                    <div class="glass-card p-4 rounded-2xl cursor-pointer group" onclick="openDetail(${dest.id})">
+                        <div class="w-full h-48 rounded-xl mb-4 img-loading overflow-hidden">
+                            <img src="${getImageUrl(dest.city)}" alt="${dest.city}" loading="lazy" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onload="this.parentElement.classList.remove('img-loading')">
+                        </div>
+                        <h4 class="font-serif text-2xl text-yellow-400 mb-1">${dest.city}</h4>
+                        <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">${dest.country}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function renderList() {
+            const container = document.getElementById('list-container');
+            container.innerHTML = "";
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('continentFilter').value;
+
+            const continents =["Asia", "Europe", "Americas", "Africa", "Oceania"];
+            
+            continents.forEach(cont => {
+                if(filter !== "All" && filter !== cont) return;
                 
-                flights.forEach(flight => {
-                    if (flight.status !== 'Flying') return;
+                const contItems = destinations.filter(d => d.continent === cont && (d.city.toLowerCase().includes(query) || d.country.toLowerCase().includes(query)));
+                
+                if(contItems.length === 0) return;
 
-                    const iconHtml = `
-                        <div style="transform: rotate(${flight.heading - 90}deg); transition: all 1s linear;">
-                            <i class="fa-solid fa-plane text-blue-600 text-2xl drop-shadow-md"></i>
+                let html = `
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-serif text-white mb-4 border-b border-gray-700 pb-2 flex justify-between items-end">
+                            ${cont} <span class="text-xs text-gray-500 font-sans tracking-widest">${contItems.length} Places</span>
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                `;
+                contItems.forEach(d => {
+                    html += `
+                        <div onclick="openDetail(${d.id})" class="glass p-3 rounded-xl cursor-pointer hover:bg-yellow-500/20 hover:border-yellow-500/50 transition group flex flex-col items-center text-center">
+                            <h4 class="text-sm font-bold text-gray-200 group-hover:text-yellow-400 transition">${d.city}</h4>
+                            <p class="text-[10px] text-gray-400 uppercase">${d.country}</p>
                         </div>
                     `;
-                    
-                    const customIcon = L.divIcon({
-                        html: iconHtml,
-                        className: 'bg-transparent',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    });
-
-                    if (markersRef.current[flight.id]) {
-                        // Update position
-                        markersRef.current[flight.id].setLatLng([flight.lat, flight.lng]);
-                        markersRef.current[flight.id].setIcon(customIcon);
-                    } else {
-                        // Create new marker
-                        const marker = L.marker([flight.lat, flight.lng], { icon: customIcon })
-                            .addTo(map)
-                            .on('click', () => setSelectedFlight(flight));
-                        
-                        markersRef.current[flight.id] = marker;
-                    }
                 });
-            }, [flights]);
+                html += `</div></div>`;
+                container.innerHTML += html;
+            });
 
-            const filteredFlights = flights.filter(f => 
-                f.callsign.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                f.dep.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                f.arr.city.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            if(container.innerHTML === "") {
+                container.innerHTML = `<div class="text-center text-gray-500 py-10"><i class="fa-solid fa-ghost text-4xl mb-3"></i><p>No destinations found.</p></div>`;
+            }
+        }
 
-            const activeFlightsCount = flights.filter(f => f.status === 'Flying').length;
+        function filterList() {
+            renderList();
+        }
 
-            return (
-                <div className="h-screen w-full relative flex flex-col">
-                    
-                    {/* Top Search Bar (Floating) */}
-                    <div className="absolute top-0 left-0 right-0 z-[1000] p-4 pointer-events-none">
-                        <div className="bg-white/90 backdrop-blur-md shadow-lg rounded-2xl flex items-center p-3 pointer-events-auto max-w-md mx-auto">
-                            <i className="fa-solid fa-search text-gray-400 ml-2"></i>
-                            <input 
-                                type="text" 
-                                placeholder="Search flight, city, or airline..." 
-                                className="bg-transparent border-none outline-none flex-1 px-3 text-gray-700 placeholder-gray-400"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            {searchTerm && (
-                                <button onClick={() => setSearchTerm('')} className="text-gray-400 hover:text-gray-600">
-                                    <i className="fa-solid fa-times"></i>
-                                </button>
-                            )}
-                        </div>
-                        
-                        {/* Search Results Dropdown */}
-                        {searchTerm && (
-                            <div className="bg-white mt-2 rounded-xl shadow-xl max-w-md mx-auto max-h-60 overflow-y-auto pointer-events-auto">
-                                {filteredFlights.map(f => (
-                                    <div key={f.id} onClick={() => {
-                                        setSelectedFlight(f);
-                                        setSearchTerm('');
-                                        if (mapRef.current && f.status === 'Flying') {
-                                            mapRef.current.flyTo([f.lat, f.lng], 9);
-                                        }
-                                    }} className="p-3 border-b border-gray-100 flex justify-between items-center hover:bg-gray-50">
-                                        <div>
-                                            <div className="font-bold text-blue-900">{f.callsign}</div>
-                                            <div className="text-xs text-gray-500">{f.dep.city} to {f.arr.city}</div>
-                                        </div>
-                                        <div className="text-xs font-bold text-gray-400">{f.status}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+        // ==========================================
+        // 5. MAP LOGIC
+        // ==========================================
+        function initMap() {
+            if(mapInstance) return;
+            mapInstance = L.map('map').setView([20, 0], 2);
+            
+            // Elegant dark map tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(mapInstance);
+
+            const customIcon = L.divIcon({
+                className: 'custom-icon',
+                html: '<div class="custom-marker"></div>',
+                iconSize: [16, 16],
+                iconAnchor:[8, 8],
+                popupAnchor: [0, -10]
+            });
+
+            destinations.forEach(d => {
+                const marker = L.marker([d.lat, d.lng], {icon: customIcon}).addTo(mapInstance);
+                marker.bindPopup(`
+                    <div class="text-center">
+                        <h4 class="font-serif text-lg text-yellow-400">${d.city}</h4>
+                        <p class="text-xs text-gray-300 mb-2">${d.country}</p>
+                        <button onclick="openDetail(${d.id})" class="bg-yellow-500 text-gray-900 text-xs px-3 py-1 rounded-full font-bold">View Guide</button>
                     </div>
+                `);
+                mapMarkers.push(marker);
+            });
+        }
 
-                    {/* Main Content Area */}
-                    <div className="flex-1 relative bg-gray-100">
-                        
-                        {/* MAP VIEW */}
-                        <div id="map-container" className={`${view === 'map' ? 'block' : 'hidden'}`}></div>
-                        
-                        {/* Map Overlay Stats */}
-                        {view === 'map' && (
-                            <div className="absolute top-20 right-4 z-[999]">
-                                <div className="bg-white/90 backdrop-blur rounded-lg shadow-lg p-2 text-center">
-                                    <div className="text-xs text-gray-500 uppercase font-bold">In Air</div>
-                                    <div className="text-xl font-black text-green-600">{activeFlightsCount}</div>
-                                </div>
-                            </div>
-                        )}
+        function toggleView(view) {
+            if(view === 'map') {
+                document.getElementById('view-list').classList.add('hidden');
+                document.getElementById('view-map').classList.remove('hidden');
+                document.getElementById('btn-map-view').classList.replace('text-gray-400', 'bg-yellow-500');
+                document.getElementById('btn-map-view').classList.add('text-gray-900', 'shadow-md');
+                document.getElementById('btn-list-view').classList.replace('bg-yellow-500', 'text-gray-400');
+                document.getElementById('btn-list-view').classList.remove('text-gray-900', 'shadow-md');
+                
+                if(!mapInstance) initMap();
+                setTimeout(() => mapInstance.invalidateSize(), 100);
+            } else {
+                document.getElementById('view-map').classList.add('hidden');
+                document.getElementById('view-list').classList.remove('hidden');
+                document.getElementById('btn-list-view').classList.replace('text-gray-400', 'bg-yellow-500');
+                document.getElementById('btn-list-view').classList.add('text-gray-900', 'shadow-md');
+                document.getElementById('btn-map-view').classList.replace('bg-yellow-500', 'text-gray-400');
+                document.getElementById('btn-map-view').classList.remove('text-gray-900', 'shadow-md');
+            }
+        }
 
-                        {/* LIST VIEW */}
-                        {view === 'list' && (
-                            <div className="h-full overflow-y-auto p-4 pt-24 pb-24 max-w-md mx-auto">
-                                <h2 className="text-xl font-bold text-gray-800 mb-4 px-1">Active Schedule</h2>
-                                
-                                <div className="space-y-4">
-                                    {/* Tabs */}
-                                    <div className="flex gap-2 mb-4 overflow-x-auto hide-scroll pb-2">
-                                        <button className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold shadow-md whitespace-nowrap">All Flights</button>
-                                        <button className="px-4 py-2 bg-white text-gray-600 rounded-full text-sm font-bold shadow-sm whitespace-nowrap">Nepalese</button>
-                                        <button className="px-4 py-2 bg-white text-gray-600 rounded-full text-sm font-bold shadow-sm whitespace-nowrap">International</button>
-                                    </div>
+        // ==========================================
+        // 6. DESTINATION DETAIL VIEW
+        // ==========================================
+        function openDetail(id) {
+            const d = destinations[id];
+            const visa = getVisaStatus(d.country, d.continent);
+            const container = document.getElementById('detail-dynamic-content');
 
-                                    {filteredFlights.length === 0 ? (
-                                        <div className="text-center text-gray-400 mt-10">
-                                            <i className="fa-solid fa-plane-slash text-4xl mb-2"></i>
-                                            <p>No flights found.</p>
-                                        </div>
-                                    ) : (
-                                        filteredFlights.map(flight => (
-                                            <FlightCard key={flight.id} flight={flight} onClick={setSelectedFlight} />
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        )}
+            container.innerHTML = `
+                <!-- Hero Image -->
+                <div class="relative h-64 md:h-96 w-full rounded-3xl overflow-hidden shadow-2xl border border-gray-700 img-loading">
+                    <img src="${getImageUrl(d.city)}" alt="${d.city}" class="w-full h-full object-cover transition duration-700 hover:scale-105" onload="this.parentElement.classList.remove('img-loading')">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#090e17] via-transparent to-transparent pointer-events-none"></div>
+                    <div class="absolute bottom-6 left-6 md:bottom-8 md:left-8 pointer-events-none">
+                        <span class="bg-yellow-500 text-gray-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-3 inline-block shadow-lg">${d.continent}</span>
+                        <h2 class="text-4xl md:text-6xl font-serif text-white drop-shadow-lg leading-none">${d.city}</h2>
+                        <p class="text-xl text-gray-300 drop-shadow-md mt-2">${d.country}</p>
                     </div>
-
-                    {/* Bottom Navigation */}
-                    <div className="bg-white border-t border-gray-200 safe-area-pb z-[1001]">
-                        <div className="flex justify-around items-center h-16 max-w-md mx-auto">
-                            <button 
-                                onClick={() => setView('map')}
-                                className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${view === 'map' ? 'text-blue-600' : 'text-gray-400'}`}
-                            >
-                                <i className="fa-solid fa-map text-xl"></i>
-                                <span className="text-[10px] font-bold">Radar</span>
-                            </button>
-                            
-                            <div className="relative -top-6">
-                                <button className="bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center border-4 border-gray-100 hover:bg-blue-700 transition">
-                                    <i className="fa-solid fa-plane-departure text-xl"></i>
-                                </button>
-                            </div>
-
-                            <button 
-                                onClick={() => setView('list')}
-                                className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${view === 'list' ? 'text-blue-600' : 'text-gray-400'}`}
-                            >
-                                <i className="fa-solid fa-list text-xl"></i>
-                                <span className="text-[10px] font-bold">Schedule</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Detailed Flight View (Bottom Sheet) */}
-                    <BottomSheet flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
-
                 </div>
-            );
-        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+                <!-- Quick Facts Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-money-bill-wave text-green-400 text-2xl mb-2"></i>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">Currency</p>
+                        <p class="text-sm font-bold text-white">${d.currency}</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-language text-purple-400 text-2xl mb-2"></i>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">Language</p>
+                        <p class="text-sm font-bold text-white">${d.language}</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-plane-departure text-blue-400 text-2xl mb-2"></i>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">From KTM</p>
+                        <p class="text-sm font-bold text-white">${d.flight}</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-calendar-check text-yellow-400 text-2xl mb-2"></i>
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">Your Dates</p>
+                        <p class="text-sm font-bold text-white">Apr 26 - May 1</p>
+                    </div>
+                </div>
+
+                <!-- Split Content: Visa & Itinerary -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Visa Box -->
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="glass-card p-6 rounded-2xl border-t-4 border-${visa.color}-500 relative overflow-hidden h-full">
+                            <i class="fa-solid ${visa.icon} text-6xl absolute -right-4 -top-4 text-white opacity-5"></i>
+                            <h3 class="text-xl font-serif text-white mb-2"><i class="fa-solid fa-passport text-${visa.color}-400 mr-2"></i>Visa Protocol</h3>
+                            <div class="inline-block bg-${visa.color}-500/20 text-${visa.color}-400 text-xs px-2 py-1 rounded mb-4 font-bold tracking-wide border border-${visa.color}-500/30">
+                                NEPAL PASSPORT
+                            </div>
+                            <p class="text-lg font-bold text-white mb-2">${visa.type}</p>
+                            <p class="text-sm text-gray-400 leading-relaxed">${visa.action}</p>
+                            <button onclick="switchTab('visa')" class="mt-6 text-sm text-yellow-400 hover:text-yellow-300 font-semibold flex items-center gap-1 transition">
+                                View Full Visa Hub <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Itinerary Box -->
+                    <div class="lg:col-span-2 glass-card p-6 md:p-8 rounded-2xl">
+                        <h3 class="text-2xl font-serif text-white mb-6 border-b border-gray-700 pb-3 flex items-center justify-between">
+                            <span>Tailored 6-Day Escape</span>
+                            <span class="text-xs bg-white/10 px-3 py-1 rounded-full font-sans tracking-widest text-gray-300">2026</span>
+                        </h3>
+                        ${generateSpecificItinerary(d.city, d.country)}
+                    </div>
+                </div>
+            `;
+            
+            switchTab('destination-detail');
+        }
+
+        // ==========================================
+        // 7. NAVIGATION LOGIC
+        // ==========================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            // Desktop Nav
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'text-yellow-400'));
+            const desktopLinks = document.querySelectorAll('.nav-link');
+            if(tabId === 'home') desktopLinks[0].classList.add('active', 'text-yellow-400');
+            if(tabId === 'destinations' || tabId === 'destination-detail') desktopLinks[1].classList.add('active', 'text-yellow-400');
+            if(tabId === 'visa') desktopLinks[2].classList.add('active', 'text-yellow-400');
+
+            // Mobile Nav
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            const mobileLinks = document.querySelectorAll('.mobile-nav-item');
+            if(tabId === 'home') mobileLinks[0].classList.add('active');
+            if(tabId === 'destinations' || tabId === 'destination-detail') mobileLinks[1].classList.add('active');
+            if(tabId === 'visa') mobileLinks[2].classList.add('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Re-render map size if switching back to map view
+            if(tabId === 'destinations' && !document.getElementById('view-map').classList.contains('hidden') && mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 100);
+            }
+        }
+
+        // ==========================================
+        // 8. BACKGROUND THREE.JS
+        // ==========================================
+        function init3DBackground() {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Wireframe Earth (Stylized)
+            const geometry = new THREE.SphereGeometry(6, 32, 32);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x334155, wireframe: true, transparent: true, opacity: 0.15
+            });
+            const earth = new THREE.Mesh(geometry, material);
+            earth.position.set(window.innerWidth > 768 ? 5 : 0, window.innerWidth > 768 ? 0 : -3, 0);
+            scene.add(earth);
+
+            // Floating stars
+            const starsGeo = new THREE.BufferGeometry();
+            const starsArray = new Float32Array(300 * 3);
+            for(let i=0; i<900; i++) {
+                starsArray[i] = (Math.random() - 0.5) * 40;
+            }
+            starsGeo.setAttribute('position', new THREE.BufferAttribute(starsArray, 3));
+            const starsMat = new THREE.PointsMaterial({color: 0xfbbf24, size: 0.03, transparent: true, opacity: 0.5});
+            const stars = new THREE.Points(starsGeo, starsMat);
+            scene.add(stars);
+
+            camera.position.z = 15;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                earth.rotation.y += 0.001;
+                stars.rotation.y -= 0.0005;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                earth.position.set(window.innerWidth > 768 ? 5 : 0, window.innerWidth > 768 ? 0 : -3, 0);
+            });
+        }
+
+        // ==========================================
+        // INIT ALL
+        // ==========================================
+        window.onload = () => {
+            parseData();
+            renderHome();
+            renderList();
+            init3DBackground();
+        };
     </script>
 </body>
 </html>
